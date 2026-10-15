@@ -22,7 +22,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 
 /* ---------- Google Drive ---------- */
 const API = 'https://www.googleapis.com/drive/v3/files';
-const srcUrl = id => `${API}/${id}?alt=media&key=${encodeURIComponent(S.cfg.key)}`;
+const srcUrl = id => S.cfg.key ? `${API}/${id}?alt=media&key=${encodeURIComponent(S.cfg.key)}` : `https://drive.google.com/uc?export=download&id=${id}`;
 const isAudio = f => /^audio\//.test(f.mimeType) || /\.(mp3|m4a|aac|flac|wav|ogg|opus)$/i.test(f.name);
 
 function parseLink(s) {
@@ -56,23 +56,29 @@ async function listFolder(id, out, depth = 0) {
   } while (token);
 }
 async function syncLibrary() {
-  if (!S.cfg.key) return setStatus('Chua nhap API key.');
-  const links = S.cfg.links.split(/\s+/).map(parseLink).filter(Boolean);
-  if (!links.length) return setStatus('Chua co link Google Drive hop le.');
-  setStatus('Dang quet Google Drive...');
+  const lines = S.cfg.links.split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const items = lines.map((ln, n) => {
+    const i = ln.lastIndexOf('|');
+    const name = i > 0 ? ln.slice(0, i).trim() : '';
+    const link = parseLink(i > 0 ? ln.slice(i + 1) : ln);
+    return link && { ...link, name: name || `Bai hat ${n + 1}` , named: !!name };
+  }).filter(Boolean);
+  if (!items.length) return setStatus('Chua co link Google Drive hop le.');
+  if (!S.cfg.key && items.some(l => l.type === 'folder')) return setStatus('Link thu muc can API key. Khong co key thi dan link tung file (moi dong 1 link).');
+  setStatus('Dang xu ly...');
   const out = [];
   try {
-    for (const l of links) {
+    for (const l of items) {
       if (l.type === 'folder') await listFolder(l.id, out);
-      else {
+      else if (S.cfg.key && !l.named) {
         const f = await gfetch(`${API}/${l.id}?fields=id,name,mimeType&key=${encodeURIComponent(S.cfg.key)}`);
         out.push({ id: f.id, name: f.name.replace(/\.[^.]+$/, '') });
-      }
+      } else out.push({ id: l.id, name: l.name });
     }
     const seen = new Set();
     S.library = out.filter(s => !seen.has(s.id) && seen.add(s.id)).sort((a, b) => a.name.localeCompare(b.name));
     save();
-    setStatus(`Da quet xong: ${S.library.length} bai.`);
+    setStatus(`Xong: ${S.library.length} bai.`);
   } catch (e) { setStatus(String(e.message || e)); }
 }
 function setStatus(t) { S.status = t; render(); }
@@ -237,12 +243,12 @@ function render() {
     }
   } else {
     v.innerHTML = `
-      <label>Google API key (YouTube/Drive API key cua ban, bat Google Drive API)</label>
-      <input type="text" id="key" value="${esc(S.cfg.key)}" placeholder="AIza...">
-      <label>Link thu muc hoac file Google Drive (moi dong 1 link; phai chia se "Bat ky ai co link")</label>
-      <textarea id="links" placeholder="https://drive.google.com/drive/folders/...">${esc(S.cfg.links)}</textarea>
-      <div class="bar"><button id="savecfg">Luu va quet Drive</button></div>${st}
-      <div class="msg">Cach lay API key: console.cloud.google.com > tao project > APIs & Services > bat "Google Drive API" > Credentials > Create API key. Nen gioi han key theo ten mien noi host app.</div>`;
+      <label>Danh sach bai hat: moi dong 1 link file Google Drive. Co the them ten: Ten bai | link</label>
+      <textarea id="links" placeholder="Bai 1 | https://drive.google.com/file/d/.../view">${esc(S.cfg.links)}</textarea>
+      <label>API key (khong bat buoc - chi can neu muon dan link THU MUC de tu quet ten bai)</label>
+      <input type="text" id="key" value="${esc(S.cfg.key)}" placeholder="AIza... (bo trong cung duoc)">
+      <div class="bar"><button id="savecfg">Luu</button></div>${st}
+      <div class="msg">Moi file nhac tren Drive phai chia se "Bat ky ai co link". Khong co API key: dan link tung file, nen dat ten bang "Ten | link".</div>`;
     $('#savecfg').onclick = () => { S.cfg.key = $('#key').value.trim(); S.cfg.links = $('#links').value.trim(); save(); syncLibrary().then(() => { S.tab = 'library'; render(); }); };
   }
 }
@@ -252,5 +258,5 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 syncBtns();
 const last = store.get('last', null);
 if (last) { S.queue = [last]; S.idx = 0; audio.src = srcUrl(last.id); $('#now').textContent = last.name; updateMedia(last); }
-if (!S.cfg.key) S.tab = 'settings';
+if (!S.cfg.links) S.tab = 'settings';
 render();

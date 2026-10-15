@@ -6,8 +6,8 @@ Web app nghe nhac (PWA) cho dien thoai Android/iPhone. Nhac lay tu Google Drive,
 python3 -m http.server 8080 (hoac host len GitHub Pages/Netlify de dung HTTPS tren dien thoai), mo trang, vao "Cai dat".
 
 ## Cai dat
-1. Tao Google API key (bat Google Drive API).
-2. Chia se thu muc nhac tren Drive: "Bat ky ai co link".
+1. Dan link tung file Drive (moi dong 1 link, dang "Ten | link"). API key chi can neu dung link thu muc.
+2. Chia se file nhac tren Drive: "Bat ky ai co link".
 3. Dan link thu muc/file vao Cai dat, bam "Luu va quet Drive".
 4. Tren dien thoai: menu trinh duyet > "Them vao man hinh chinh" de cai nhu app.
 
