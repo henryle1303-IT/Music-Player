@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#121212">
+<title>Music Player</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1>Music Player</h1>
+<nav>
+<button data-tab="library" class="active">Thu vien</button>
+<button data-tab="playlists">Playlist</button>
+<button data-tab="settings">Cai dat</button>
+</nav></header>
+<main id="view"></main>
+<footer id="player">
+<div id="now">Chua phat bai nao</div>
+<div class="seek"><span id="cur">0:00</span><input id="seek" type="range" min="0" max="1000" value="0"><span id="dur">0:00</span></div>
+<div class="ctrl">
+<button id="shuffle" title="Tron bai">Tron</button>
+<button id="prev">|&lt;</button>
+<button id="play">Phat</button>
+<button id="next">&gt;|</button>
+<button id="repeat" title="Lap lai">Lap: tat</button>
+</div>
+<audio id="audio" preload="auto"></audio>
+</footer>
+<dialog id="pick"></dialog>
+<script src="app.js"></script>
+</body>
+</html>
